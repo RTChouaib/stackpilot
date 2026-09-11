@@ -196,6 +196,31 @@ export const deletionRequests = pgTable(
 );
 
 /* ============================================================
+   CREDIT PURCHASES ($10 for 5 extra generations, beyond the
+   2/day free quota — see lib/quota/. Recorded here as the
+   durable audit trail; Redis holds the live spendable balance.)
+   ============================================================ */
+
+export const creditPurchases = pgTable(
+  "credit_purchases",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    deviceId: text("device_id").notNull(),
+    stripeSessionId: text("stripe_session_id").notNull().unique(),
+    amountUsdCents: integer("amount_usd_cents").notNull(),
+    creditsGranted: integer("credits_granted").notNull(),
+    customerEmail: text("customer_email"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    deviceIdIdx: index("credit_purchases_device_id_idx").on(table.deviceId),
+    stripeSessionIdIdx: index("credit_purchases_stripe_session_id_idx").on(table.stripeSessionId),
+  })
+);
+
+export type CreditPurchase = typeof creditPurchases.$inferSelect;
+
+/* ============================================================
    RELATIONS
    ============================================================ */
 

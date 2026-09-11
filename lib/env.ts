@@ -22,7 +22,6 @@ const EnvSchema = z.object({
   ADMIN_ALERT_EMAIL: z.string().email("ADMIN_ALERT_EMAIL must be a valid email"),
   EMAIL_FROM: z.string().min(1).default("StackPilot <alerts@stackpilot.app>"),
   JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters"),
-  ADMIN_LOGIN_PASSWORD: z.string().min(8, "ADMIN_LOGIN_PASSWORD must be at least 8 characters").optional(),
   NEXT_PUBLIC_APP_URL: z.string().url().default("https://stackpilot.app"),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
 });

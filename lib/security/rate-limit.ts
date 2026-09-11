@@ -15,7 +15,14 @@ import { Redis } from "@upstash/redis";
  */
 let redisClient: Redis | null = null;
 
-function getRedisClient(): Redis {
+/**
+ * Exported (not just used internally) so other modules needing Upstash
+ * Redis for a different purpose — lib/quota/index.ts's daily free-tier and
+ * paid-credit counters — reuse this same lazily-constructed client and its
+ * "throw one clear error naming what's missing" behavior, rather than each
+ * duplicating the connection/validation logic.
+ */
+export function getRedisClient(): Redis {
   if (redisClient) return redisClient;
 
   const url = process.env.UPSTASH_REDIS_REST_URL;

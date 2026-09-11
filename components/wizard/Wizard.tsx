@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, Check, CheckCircle2, Circle, Loader2, Mail } from "lucide-react";
 import type { QuestionnaireInput } from "@/lib/ai/schema";
+import QuotaBadge from "./QuotaBadge";
+import PaywallPanel from "./PaywallPanel";
 
 type StepDef =
   | { key: keyof QuestionnaireInput; title: string; type: "single"; options: { id: string; label: string }[] }
@@ -90,9 +92,47 @@ export default function Wizard({ agencySlug, branding }: WizardProps) {
   const [consent, setConsent] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [quota, setQuota] = useState<{ freeRemaining: number; paidCredits: number } | null>(null);
+  const [paymentsEnabled, setPaymentsEnabled] = useState(false);
+  const [paywall, setPaywall] = useState<{ reason: "daily_limit_reached" | "ip_ceiling_reached" } | null>(null);
+  const [purchaseNotice, setPurchaseNotice] = useState<string | null>(null);
 
   const accent = branding?.accentColor ?? "#4C5FF0";
   const accentDim = `${accent}14`;
+
+  useEffect(() => {
+    fetch("/api/quota")
+      .then((r) => r.json())
+      .then((q) => {
+        setQuota({ freeRemaining: q.freeRemaining, paidCredits: q.paidCredits });
+        setPaymentsEnabled(Boolean(q.paymentsEnabled));
+      })
+      .catch(() => {
+        /* non-critical — the wizard still works without the badge, and the
+           real check happens server-side on submit either way */
+      });
+
+    // Returning from Stripe Checkout — show a confirmation/cancellation
+    // notice and refresh the quota badge so a successful purchase is
+    // reflected immediately without a page reload.
+    const params = new URLSearchParams(window.location.search);
+    const purchase = params.get("purchase");
+    if (purchase === "success") {
+      setPurchaseNotice("Purchase complete — your extra generations are ready to use.");
+      fetch("/api/quota")
+        .then((r) => r.json())
+        .then((q) => {
+          setQuota({ freeRemaining: q.freeRemaining, paidCredits: q.paidCredits });
+          setPaymentsEnabled(Boolean(q.paymentsEnabled));
+        })
+        .catch(() => {});
+    } else if (purchase === "cancelled") {
+      setPurchaseNotice("Checkout cancelled — no charge was made.");
+    }
+    if (purchase) {
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, []);
 
   const onEmailStep = step === EMAIL_STEP_INDEX;
 
@@ -135,11 +175,19 @@ export default function Wizard({ agencySlug, branding }: WizardProps) {
           ...(agencySlug ? { agencySlug } : {}),
         }),
       });
+      if (res.status === 402) {
+        const body = await res.json().catch(() => ({}));
+        setPaywall({ reason: body.reason === "ip_ceiling_reached" ? "ip_ceiling_reached" : "daily_limit_reached" });
+        if (body.quota) setQuota({ freeRemaining: body.quota.freeRemaining, paidCredits: body.quota.paidCredits });
+        setSubmitting(false);
+        return;
+      }
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error ?? "Something went wrong generating your blueprint.");
       }
-      const { shareToken } = await res.json();
+      const { shareToken, quota: newQuota } = await res.json();
+      if (newQuota) setQuota({ freeRemaining: newQuota.freeRemaining, paidCredits: newQuota.paidCredits });
       router.push(`/blueprint/${shareToken}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong. Please try again.");
@@ -158,6 +206,16 @@ export default function Wizard({ agencySlug, branding }: WizardProps) {
 
   return (
     <div className="max-w-2xl mx-auto px-5 sm:px-8 py-12 sm:py-16">
+      {paywall && (
+        <PaywallPanel
+          priceUsd={10}
+          creditsPerPurchase={5}
+          reason={paywall.reason}
+          paymentsEnabled={paymentsEnabled}
+          onClose={() => setPaywall(null)}
+        />
+      )}
+
       {branding && (
         <div className="flex items-center gap-2 mb-8">
           {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary
@@ -169,6 +227,18 @@ export default function Wizard({ agencySlug, branding }: WizardProps) {
           <span className="text-xs font-mono text-navy-soft">Powered by StackPilot, branded for {branding.name}</span>
         </div>
       )}
+
+      {purchaseNotice && (
+        <div className="mb-6 px-4 py-3 rounded-xl text-sm bg-green-dim text-green">{purchaseNotice}</div>
+      )}
+
+      <div className="flex items-center justify-between mb-4">
+        {quota ? (
+          <QuotaBadge freeRemaining={quota.freeRemaining} paidCredits={quota.paidCredits} accent={accent} />
+        ) : (
+          <span />
+        )}
+      </div>
 
       <div className="flex items-center justify-between mb-8">
         <button onClick={back} disabled={step === 0} className="inline-flex items-center gap-1 text-sm font-medium text-navy-soft disabled:opacity-30">

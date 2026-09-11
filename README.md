@@ -49,7 +49,6 @@ misconfigured deploy fails immediately with one clear error, not a random
 - **Upstash Redis** — `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`
 - **Resend** — `RESEND_API_KEY`, `ADMIN_ALERT_EMAIL`
 - A random `JWT_SECRET` (32+ chars)
-
 Optional, fully no-op if unset: Sentry (`SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN`,
 `SENTRY_AUTH_TOKEN`/`SENTRY_ORG`/`SENTRY_PROJECT` for build-time source maps).
 
@@ -126,7 +125,47 @@ everything else) with a regression test (`rules-engine.test.ts`, the
   comment block in `instrumentation.ts` for the measured numbers and how to
   remove it if that cost isn't worth it for your deployment.
 
-## Why "recommendation emphasis" isn't wired into anything
+## Usage quota & paid top-ups (2 free/day, $10 for 5 more)
+
+Added on top of everything else: `lib/quota/` caps AI generations to control
+OpenAI spend, with a Stripe-powered top-up.
+
+- **Identity**: founders don't have accounts, so quota is tracked against a
+  long-lived, `httpOnly` device cookie (`lib/quota/device-id.ts`), set on
+  first visit to `/wizard` or `/api/quota`. Stated plainly: this is
+  resettable by clearing cookies — it's cost control for the normal case,
+  not a hard security boundary against a determined abuser. A generous
+  per-IP daily ceiling (`IP_DAILY_CEILING` in `lib/quota/index.ts`, default
+  20/day) is the backstop for that gap — loose enough not to block shared
+  offices/NAT, tight enough to stop trivial cookie-clearing loops.
+- **Free tier**: 2 generations/device/day, reset at UTC midnight
+  (`FREE_GENERATIONS_PER_DAY` in `lib/quota/index.ts`).
+- **Paid top-up**: $10 for 5 more generations (`CREDIT_PACK_PRICE_USD`,
+  `CREDITS_PER_PURCHASE`), bought via Stripe Checkout
+  (`/api/checkout` → `checkout.session.completed` webhook at
+  `/api/webhooks/stripe`). Credits never expire and are spent only after the
+  free daily quota runs out (free-then-paid, never the reverse — see the
+  ordering test in `lib/quota/index.test.ts`).
+- **Where it's enforced**: `app/api/generate-blueprint/route.ts` checks and
+  consumes quota *before* calling the AI — that's what actually stops token
+  spend, as opposed to gating after the fact. A 402 response includes the
+  reason and current balance so the wizard can show the right UI (buy
+  more vs. "try tomorrow").
+- **Payment integrity**: credits are granted ONLY by the Stripe webhook
+  after signature verification — never by the Checkout success-page
+  redirect, which is trivially spoofable (anyone can navigate to
+  `/wizard?purchase=success` without paying). The webhook is idempotent
+  (Redis-deduped by Stripe event ID) since Stripe redelivers events. A
+  `credit_purchases` table is the durable audit trail; Redis holds the live
+  spendable balance.
+- **Stripe setup you still need to do manually**: create a Stripe account,
+  get `STRIPE_SECRET_KEY`, register a webhook endpoint pointing at
+  `https://yourdomain.com/api/webhooks/stripe` for the
+  `checkout.session.completed` event, and put its signing secret in
+  `STRIPE_WEBHOOK_SECRET`. Test with Stripe CLI (`stripe listen --forward-to
+  localhost:3000/api/webhooks/stripe`) before going live with real cards.
+
+
 
 The admin panel has cost/speed/quality sliders. They're saved
 (`recommendation_settings` table) but **do not affect** what
@@ -180,10 +219,53 @@ that's the next real feature to design — not a bug to patch.
   this environment (no network access to sentry.io here) — the DSN-gating
   logic is sound, but verify the actual event delivery once you have a real
   DSN.
-- **Nothing here has touched a real Postgres/OpenAI/Upstash/Resend
+- **Quota is device-cookie based, not account based** (see the quota
+  section above) — acceptable for cost control, not for anything requiring
+  real per-person enforcement. No refund flow exists if a payment succeeds
+  but credits need to be reversed (would currently require a manual Redis
+  `DECRBY` + a note in `credit_purchases`); no receipt/invoice email is
+  sent beyond Stripe's own default receipt.
+- **Nothing here has touched a real Postgres/OpenAI/Upstash/Resend/Stripe
   instance.** `npm install`, `tsc`, `next lint`, `vitest`, and `next build`
   all pass in this environment — but no migration has been run against a
   live database, no `generateObject` call has actually been made, no PDF has
   actually been rendered, no email has actually been sent. That's the first
   thing to do with real credentials: walk the wizard → blueprint → PDF →
   lead → admin flow end to end once.
+
+## Deploying this for real
+
+I can't push this live myself — no network access from where this was built
+to Vercel, a domain registrar, or your Stripe/OpenAI/Upstash/Resend
+accounts. Here's the actual path to a live URL:
+
+1. **Push this to a GitHub repo.** The CI workflow (`.github/workflows/ci.yml`)
+   runs automatically on push — confirm it's green before deploying.
+2. **Provision the real services**: Neon (or Supabase) Postgres, an OpenAI
+   API key, an Upstash Redis database, a Resend account with a verified
+   sending domain, and a Stripe account.
+3. **Deploy to Vercel** (or any Next.js 15 host): import the repo, set every
+   variable from `.env.example` in the project's environment settings
+   (`DATABASE_URL`, `OPENAI_API_KEY`, `UPSTASH_REDIS_REST_URL`/`TOKEN`,
+   `RESEND_API_KEY`, `ADMIN_ALERT_EMAIL`, `JWT_SECRET`,
+   `NEXT_PUBLIC_APP_URL`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`).
+   `instrumentation.ts` will refuse to boot if any required one is missing —
+   that's intentional, so a broken deploy fails loudly instead of half-working.
+4. **Point your domain at it**, then set `NEXT_PUBLIC_APP_URL` to that real
+   domain and redeploy — OG images, the sitemap, email links, and Stripe's
+   success/cancel URLs all depend on this being correct.
+5. **Run migrations against the real database**: `npm run db:generate &&
+   npm run db:migrate`, then `npm run db:seed -- you@yourdomain.com "..."`
+   for your admin login.
+6. **Register the Stripe webhook** pointing at
+   `https://yourdomain.com/api/webhooks/stripe` for `checkout.session.completed`,
+   copy its signing secret into `STRIPE_WEBHOOK_SECRET`, redeploy.
+7. **Walk the full flow once for real**: generate a blueprint (uses 1 of
+   your 2 free/day), exhaust the quota, buy the $10 pack with a real card
+   (or Stripe test mode first), confirm credits land, download the PDF,
+   submit a lead, confirm the email alert arrives, confirm it shows up in
+   `/admin`.
+
+Nothing above can be verified from this environment — steps 2–7 all require
+accounts and network access I don't have here. Everything up to that point
+(the code itself) is typechecked, linted, tested, and build-verified.

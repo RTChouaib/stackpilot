@@ -9,6 +9,8 @@ import { getAiGenerationRateLimiter, getClientIp, checkRateLimit } from "@/lib/s
 import { generateBlueprintWithAI } from "@/lib/ai/generate";
 import { generateShareToken } from "@/lib/utils/token";
 import { sendLeadAlertEmail } from "@/lib/email/notifier";
+import { getOrCreateDeviceId } from "@/lib/quota/device-id";
+import { checkAndConsume, CREDIT_PACK_PRICE_USD, CREDITS_PER_PURCHASE } from "@/lib/quota";
 
 export const runtime = "nodejs"; // @react-pdf and the AI SDK need the Node runtime, not Edge.
 
@@ -54,6 +56,29 @@ export async function POST(request: NextRequest) {
 
   // ---- 3. Sanitize every free-text field before it touches the DB or an LLM prompt ----
   const inputs = sanitizeDeep(parsed.data);
+
+  // ---- 3a. Quota: 2 free generations/day/device, then paid credits ----
+  // Checked (and consumed) BEFORE the AI call specifically — this is what
+  // actually stops token spend, as opposed to gating after the fact. The
+  // rate limiter above (step 1) protects against rapid-fire abuse
+  // regardless of tier; this is the separate free/paid business quota.
+  const { id: deviceId } = await getOrCreateDeviceId();
+  const consumeResult = await checkAndConsume(deviceId, ip);
+  if (!consumeResult.allowed) {
+    return NextResponse.json(
+      {
+        error:
+          consumeResult.reason === "daily_limit_reached"
+            ? process.env.STRIPE_SECRET_KEY
+              ? `You've used today's free blueprint generations. Buy ${CREDITS_PER_PURCHASE} more for $${CREDIT_PACK_PRICE_USD}, or come back tomorrow.`
+              : "You've used today's free blueprint generations. Come back tomorrow for 2 more."
+            : "Too many generations from this network today. Please try again tomorrow.",
+        reason: consumeResult.reason,
+        quota: consumeResult.status,
+      },
+      { status: 402 }
+    );
+  }
 
   // ---- 3b. Resolve agency attribution, if this came through a branded wizard ----
   // The client-supplied slug only controls attribution/branding — it never
@@ -120,6 +145,7 @@ export async function POST(request: NextRequest) {
       shareToken: saved.shareToken,
       blueprint,
       meta: { source }, // "ai" | "deterministic-fallback" — surfaced for observability, safe to ignore client-side
+      quota: consumeResult.status,
     },
     { status: 201 }
   );
