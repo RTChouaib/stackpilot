@@ -45,7 +45,7 @@ misconfigured deploy fails immediately with one clear error, not a random
 500 on whichever request touches the missing var first):
 
 - **Neon** (or Supabase Postgres) — `DATABASE_URL`
-- **OpenAI** — `OPENAI_API_KEY`
+- **DeepSeek** — `DEEPSEEK_API_KEY`
 - **Upstash Redis** — `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`
 - **Resend** — `RESEND_API_KEY`, `ADMIN_ALERT_EMAIL`
 - A random `JWT_SECRET` (32+ chars)
@@ -128,7 +128,7 @@ everything else) with a regression test (`rules-engine.test.ts`, the
 ## Usage quota & paid top-ups (2 free/day, $10 for 5 more)
 
 Added on top of everything else: `lib/quota/` caps AI generations to control
-OpenAI spend, with a Stripe-powered top-up.
+DeepSeek spend, with a Stripe-powered top-up.
 
 - **Identity**: founders don't have accounts, so quota is tracked against a
   long-lived, `httpOnly` device cookie (`lib/quota/device-id.ts`), set on
@@ -225,7 +225,7 @@ that's the next real feature to design — not a bug to patch.
   but credits need to be reversed (would currently require a manual Redis
   `DECRBY` + a note in `credit_purchases`); no receipt/invoice email is
   sent beyond Stripe's own default receipt.
-- **Nothing here has touched a real Postgres/OpenAI/Upstash/Resend/Stripe
+- **Nothing here has touched a real Postgres/DeepSeek/Upstash/Resend/Stripe
   instance.** `npm install`, `tsc`, `next lint`, `vitest`, and `next build`
   all pass in this environment — but no migration has been run against a
   live database, no `generateObject` call has actually been made, no PDF has
@@ -236,17 +236,17 @@ that's the next real feature to design — not a bug to patch.
 ## Deploying this for real
 
 I can't push this live myself — no network access from where this was built
-to Vercel, a domain registrar, or your Stripe/OpenAI/Upstash/Resend
+to Vercel, a domain registrar, or your Stripe/DeepSeek/Upstash/Resend
 accounts. Here's the actual path to a live URL:
 
 1. **Push this to a GitHub repo.** The CI workflow (`.github/workflows/ci.yml`)
    runs automatically on push — confirm it's green before deploying.
-2. **Provision the real services**: Neon (or Supabase) Postgres, an OpenAI
+2. **Provision the real services**: Neon (or Supabase) Postgres, a DeepSeek
    API key, an Upstash Redis database, a Resend account with a verified
    sending domain, and a Stripe account.
 3. **Deploy to Vercel** (or any Next.js 15 host): import the repo, set every
    variable from `.env.example` in the project's environment settings
-   (`DATABASE_URL`, `OPENAI_API_KEY`, `UPSTASH_REDIS_REST_URL`/`TOKEN`,
+   (`DATABASE_URL`, `DEEPSEEK_API_KEY`, `UPSTASH_REDIS_REST_URL`/`TOKEN`,
    `RESEND_API_KEY`, `ADMIN_ALERT_EMAIL`, `JWT_SECRET`,
    `NEXT_PUBLIC_APP_URL`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`).
    `instrumentation.ts` will refuse to boot if any required one is missing —

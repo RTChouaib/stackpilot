@@ -84,8 +84,8 @@ export async function getAdminOverview(agencyId?: string): Promise<AdminOverview
     quoteRequests,
     builderMatchRequests,
     affiliateClicks,
-    projectTypeCounts: projectTypeRows.rows.map((r) => ({ label: r.project_type ?? "unspecified", value: r.value })),
-    techCounts: techRows.rows.map((r) => ({ label: r.tech, value: r.value })),
+    projectTypeCounts: projectTypeRows.map((r) => ({ label: r.project_type ?? "unspecified", value: r.value })),
+    techCounts: techRows.map((r) => ({ label: r.tech, value: r.value })),
   };
 }
 

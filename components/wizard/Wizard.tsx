@@ -184,13 +184,15 @@ export default function Wizard({ agencySlug, branding }: WizardProps) {
       }
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body.error ?? "Something went wrong generating your blueprint.");
+        const message = typeof body?.error === "string" && body.error.trim() ? body.error : "Something went wrong generating your blueprint.";
+        throw new Error(message);
       }
       const { shareToken, quota: newQuota } = await res.json();
       if (newQuota) setQuota({ freeRemaining: newQuota.freeRemaining, paidCredits: newQuota.paidCredits });
       router.push(`/blueprint/${shareToken}`);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Something went wrong. Please try again.");
+      const message = e instanceof Error && e.message && e.message.trim() ? e.message : "Something went wrong. Please try again.";
+      setError(message);
       setSubmitting(false);
     }
   };

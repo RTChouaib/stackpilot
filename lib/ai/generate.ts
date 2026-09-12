@@ -1,8 +1,18 @@
 import { generateObject } from "ai";
-import { openai } from "@ai-sdk/openai";
+import { createOpenAI } from "@ai-sdk/openai";
 import { BlueprintSchema, type BlueprintOutput, type QuestionnaireInput } from "./schema";
 import { evaluateDeterministicRules, constraintsToPromptBlock, generateDeterministicBlueprint } from "./rules-engine";
 import { sanitizeInputText } from "@/lib/security/sanitize";
+
+const deepseekApiKey = process.env.DEEPSEEK_API_KEY ?? "";
+if (!deepseekApiKey) {
+  throw new Error("DEEPSEEK_API_KEY is required for blueprint generation.");
+}
+
+const deepseek = createOpenAI({
+  apiKey: deepseekApiKey,
+  baseURL: "https://api.deepseek.com/v1",
+});
 
 const SYSTEM_PROMPT = `You are the recommendation engine inside StackPilot, a tool that gives
 non-technical founders a realistic technical blueprint for their product idea.
@@ -83,7 +93,7 @@ export async function generateBlueprintWithAI(
 
   try {
     const { object } = await generateObject({
-      model: openai("gpt-4o"),
+      model: deepseek("deepseek-chat"),
       schema: BlueprintSchema,
       system: SYSTEM_PROMPT,
       prompt: buildUserPrompt(inputs, constraintsBlock),

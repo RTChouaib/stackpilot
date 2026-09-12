@@ -13,18 +13,23 @@ import { z } from "zod";
  * handlers, Server Components, middleware).
  */
 
-const EnvSchema = z.object({
-  DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
-  OPENAI_API_KEY: z.string().min(1, "OPENAI_API_KEY is required"),
-  UPSTASH_REDIS_REST_URL: z.string().url("UPSTASH_REDIS_REST_URL must be a valid URL"),
-  UPSTASH_REDIS_REST_TOKEN: z.string().min(1, "UPSTASH_REDIS_REST_TOKEN is required"),
-  RESEND_API_KEY: z.string().min(1, "RESEND_API_KEY is required"),
-  ADMIN_ALERT_EMAIL: z.string().email("ADMIN_ALERT_EMAIL must be a valid email"),
-  EMAIL_FROM: z.string().min(1).default("StackPilot <alerts@stackpilot.app>"),
-  JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters"),
-  NEXT_PUBLIC_APP_URL: z.string().url().default("https://stackpilot.app"),
-  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
-});
+const EnvSchema = z
+  .object({
+    DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
+    DEEPSEEK_API_KEY: z.string().min(1, "DEEPSEEK_API_KEY is required"),
+    UPSTASH_REDIS_REST_URL: z.string().url("UPSTASH_REDIS_REST_URL must be a valid URL"),
+    UPSTASH_REDIS_REST_TOKEN: z.string().min(1, "UPSTASH_REDIS_REST_TOKEN is required"),
+    RESEND_API_KEY: z.string().min(1, "RESEND_API_KEY is required"),
+    ADMIN_ALERT_EMAIL: z.string().email("ADMIN_ALERT_EMAIL must be a valid email"),
+    EMAIL_FROM: z.string().min(1).default("StackPilot <alerts@stackpilot.app>"),
+    JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters"),
+    NEXT_PUBLIC_APP_URL: z.string().url().default("https://stackpilot.app"),
+    NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  })
+  .refine((env) => Boolean(env.DEEPSEEK_API_KEY), {
+    message: "Provide DEEPSEEK_API_KEY.",
+    path: ["DEEPSEEK_API_KEY"],
+  });
 
 export type Env = z.infer<typeof EnvSchema>;
 

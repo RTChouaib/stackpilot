@@ -20,7 +20,7 @@ export default function PrivacyPage() {
           that agency) can follow up. We send you one email confirming that request.
         </p>
         <p>
-          We use Upstash (rate limiting), Resend (email delivery), OpenAI (blueprint generation),
+          We use Upstash (rate limiting), Resend (email delivery), DeepSeek (blueprint generation),
           and a Postgres database provider to operate the service. Data handled under the &quot;Privacy /
           EU hosting&quot; priority is directed to EU-region infrastructure where the underlying providers
           support it.

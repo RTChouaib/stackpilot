@@ -24,12 +24,20 @@ import { NextResponse, type NextRequest } from "next/server";
  * removing this check.
  */
 
-function isTrustedOrigin(origin: string, appUrl: string): boolean {
+function getOrigin(value: string): string | null {
   try {
-    return new URL(origin).origin === new URL(appUrl).origin;
+    return new URL(value).origin;
   } catch {
-    return false;
+    return null;
   }
+}
+
+function isTrustedOrigin(origin: string, appUrl: string): boolean {
+  const parsedOrigin = getOrigin(origin);
+  const parsedAppUrl = getOrigin(appUrl);
+
+  if (!parsedOrigin || !parsedAppUrl) return false;
+  return parsedOrigin === parsedAppUrl;
 }
 
 export interface OriginCheckResult {
@@ -46,6 +54,7 @@ export function assertTrustedOrigin(request: NextRequest): OriginCheckResult {
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://stackpilot.app";
   const origin = request.headers.get("origin") ?? request.headers.get("referer");
+  const currentOrigin = request.nextUrl.origin;
 
   // In local development, browsers may omit Origin on same-origin requests
   // more often, and NEXT_PUBLIC_APP_URL may not match localhost:3000 unless
@@ -55,7 +64,18 @@ export function assertTrustedOrigin(request: NextRequest): OriginCheckResult {
     return { ok: true, response: NextResponse.next() };
   }
 
-  if (!origin || !isTrustedOrigin(origin, appUrl)) {
+  const trustedOrigins = new Set<string>();
+  for (const candidate of [appUrl, currentOrigin]) {
+    try {
+      trustedOrigins.add(new URL(candidate).origin);
+    } catch {
+      // Ignore malformed values; the explicit origin check below handles the
+      // actual request value.
+    }
+  }
+
+  const parsedOrigin = origin ? getOrigin(origin) : null;
+  if (!parsedOrigin || !trustedOrigins.has(parsedOrigin)) {
     return {
       ok: false,
       response: NextResponse.json(

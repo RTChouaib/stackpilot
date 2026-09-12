@@ -40,6 +40,14 @@ describe("assertTrustedOrigin", () => {
     expect(assertTrustedOrigin(req).ok).toBe(false);
   });
 
+  it("allows a POST from the current app origin even when NEXT_PUBLIC_APP_URL is different", () => {
+    const req = new NextRequest("https://app.example.com/api/leads", {
+      method: "POST",
+      headers: { origin: "https://app.example.com" },
+    });
+    expect(assertTrustedOrigin(req).ok).toBe(true);
+  });
+
   it("rejects a POST with no Origin or Referer header", () => {
     const req = makeRequest("POST");
     expect(assertTrustedOrigin(req).ok).toBe(false);
