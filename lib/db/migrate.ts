@@ -6,11 +6,7 @@ import { migrate } from "drizzle-orm/postgres-js/migrator";
 
 async function main() {
   if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is not set");
-  const isLocalDatabase = /localhost|127\.0\.0\.1/.test(process.env.DATABASE_URL);
-  const client = postgres(process.env.DATABASE_URL, {
-    ssl: isLocalDatabase ? false : "require",
-    max: 1,
-  });
+  const client = postgres(process.env.DATABASE_URL, { prepare: false });
   const db = drizzle(client);
   await migrate(db, { migrationsFolder: "./lib/db/migrations" });
   console.log("Migrations applied.");
