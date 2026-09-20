@@ -1,7 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  serverExternalPackages: ["pdfkit"],
   experimental: { serverActions: { bodySizeLimit: "2mb" } },
   images: { remotePatterns: [{ protocol: "https", hostname: "**" }] },
+  outputFileTracingIncludes: {
+    "/api/pdf/[shareToken]": [
+      "./node_modules/pdfkit/js/**/*",
+      "./node_modules/@react-pdf/**/*",
+    ],
+  },
   async headers() {
     return [
       {
