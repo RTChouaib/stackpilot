@@ -64,9 +64,13 @@ export default function BlueprintView({ blueprint, recommendations, aiSetup, arc
   const handleShare = async () => {
     const url = `${window.location.origin}/blueprint/${blueprint.shareToken}`;
     try {
+      if (navigator.share) {
+        await navigator.share({ title: `${blueprint.projectName} — StackPilot Blueprint`, text: "My recommended software stack from StackPilot", url });
+        return;
+      }
       await navigator.clipboard.writeText(url);
     } catch {
-      /* clipboard may be unavailable; link is still in the address bar */
+      try { await navigator.clipboard.writeText(url); } catch { /* clipboard may be unavailable */ }
     }
   };
 
@@ -81,6 +85,7 @@ export default function BlueprintView({ blueprint, recommendations, aiSetup, arc
 
   return (
     <>
+      <div className="text-xs text-navy-soft mb-5">StackPilot / Your technology blueprint</div>
       <header className="flex flex-wrap items-start justify-between gap-4 mb-3">
         <div>
           <p className="text-xs font-mono text-navy-soft">
@@ -98,6 +103,8 @@ export default function BlueprintView({ blueprint, recommendations, aiSetup, arc
           </button>
         </div>
       </header>
+
+      <div className="mb-6 rounded-2xl border border-border bg-surface-alt p-5"><p className="font-head text-lg font-bold text-navy">Want to compare this with your own requirements?</p><p className="mt-1 text-sm text-navy-soft">Run StackPilot again with a different budget, timeline, user count or AI requirement.</p><a href="/wizard" className="inline-flex mt-4 bg-navy text-white rounded-xl px-4 py-2.5 text-sm font-semibold">Build another stack →</a></div>
 
       {/* Tier tabs */}
       <div className="flex gap-2 mt-6 mb-6 flex-wrap">
