@@ -10,3 +10,5 @@ body { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; color: #10193
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
+
+.pill{display:inline-flex;padding:.55rem .8rem;border:1px solid #E1E4F0;border-radius:.75rem;color:#10193A;font-size:.875rem;background:#fff}.pill:hover{border-color:#4C5FF0}

@@ -1,0 +1,1 @@
+export function GET(){const id=process.env.NEXT_PUBLIC_ADSENSE_PUBLISHER_ID;return new Response(id?`google.com, ${id.replace(/^ca-/,"")}, DIRECT, f08c47fec0942fa0\n`:``,{headers:{"content-type":"text/plain; charset=utf-8"}})}
