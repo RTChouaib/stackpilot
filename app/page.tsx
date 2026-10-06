@@ -9,7 +9,7 @@ const cards=[
  {icon:Calculator,title:"Free startup calculators",body:"Estimate AI API costs, SaaS metrics, infrastructure spending and payment fees.",href:"/tools"},
  {icon:Building2,title:"Practical tech guides",body:"Understand databases, hosting, AI APIs and startup architecture before you build.",href:"/guides"},
 ];
-const popular=[["AI API Cost Calculator","/tools/ai-api-cost-calculator"],["Startup Cost Calculator","/tools/startup-cost-calculator"],["SaaS MRR Calculator","/tools/saas-mrr-calculator"],["Supabase vs Firebase","/guides/supabase-vs-firebase"],["Best Tech Stack for SaaS","/guides/best-tech-stack-for-saas"],["How to Choose a Tech Stack","/guides/how-to-choose-a-tech-stack"]];
+const popular:[string,string][]=[["AI API Cost Calculator","/tools/ai-api-cost-calculator"],["Startup Cost Calculator","/tools/startup-cost-calculator"],["SaaS MRR Calculator","/tools/saas-mrr-calculator"],["Supabase vs Firebase","/guides/supabase-vs-firebase"],["Best Tech Stack for SaaS","/guides/best-tech-stack-for-saas"],["How to Choose a Tech Stack","/guides/how-to-choose-a-tech-stack"]];
 const faqs=[
  ["Is StackPilot free?","Yes. The public calculators, guides and stack generator are designed to be useful without a subscription."],
  ["What is a tech stack?","A tech stack is the set of technologies used to build and operate a software product, such as its frontend, backend, database and hosting."],
