@@ -3,13 +3,17 @@ import { Sparkles, Cpu, DollarSign, Building2, Calculator, ArrowRight } from "lu
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import AdSlot from "@/components/AdSlot";
+import JsonLd from "@/components/JsonLd";
+import { pageMeta } from "@/lib/seo";
+
+export const metadata = pageMeta({ title: "StackPilot — Startup Tech Stack, Tools & Calculators", description: "Free startup technology guides, calculators, comparisons and a personalized tech stack generator for founders and developers.", path: "/" });
 
 const cards=[
  {icon:Cpu,title:"Smart stack recommendations",body:"Describe your product and get a practical architecture, technologies, AI options and cost ranges.",href:"/wizard"},
  {icon:Calculator,title:"Free startup calculators",body:"Estimate AI API costs, SaaS metrics, infrastructure spending and payment fees.",href:"/tools"},
  {icon:Building2,title:"Practical tech guides",body:"Understand databases, hosting, AI APIs and startup architecture before you build.",href:"/guides"},
 ];
-const popular:[string,string][]=[["AI API Cost Calculator","/tools/ai-api-cost-calculator"],["Startup Cost Calculator","/tools/startup-cost-calculator"],["SaaS MRR Calculator","/tools/saas-mrr-calculator"],["Supabase vs Firebase","/guides/supabase-vs-firebase"],["Best Tech Stack for SaaS","/guides/best-tech-stack-for-saas"],["How to Choose a Tech Stack","/guides/how-to-choose-a-tech-stack"]];
+const popular:[string,string][]=[["AI API Cost Calculator","/tools/ai-api-cost-calculator"],["Startup Cost Calculator","/tools/startup-cost-calculator"],["SaaS MRR Calculator","/tools/saas-mrr-calculator"],["Supabase vs Firebase","/comparisons/supabase-vs-firebase"],["Best Tech Stack for SaaS","/guides/best-tech-stack-for-saas"],["How to Choose a Tech Stack","/guides/how-to-choose-a-tech-stack"]];
 const faqs=[
  ["Is StackPilot free?","Yes. The public calculators, guides and stack generator are designed to be useful without a subscription."],
  ["What is a tech stack?","A tech stack is the set of technologies used to build and operate a software product, such as its frontend, backend, database and hosting."],
@@ -18,6 +22,7 @@ const faqs=[
 ];
 export default function Home(){
  return <><SiteHeader/><main>
+  <JsonLd data={{"@context":"https://schema.org","@type":"FAQPage",mainEntity:faqs.map(([q,a])=>({"@type":"Question",name:q,acceptedAnswer:{"@type":"Answer",text:a}}))}}/>
   <section className="bg-blueprint-grid bg-grid-28 border-b border-border"><div className="max-w-5xl mx-auto px-5 sm:px-8 pt-16 pb-20 text-center">
    <span className="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-blue-dim text-blue mb-5">Free tools for founders & developers</span>
    <h1 className="font-head text-4xl sm:text-6xl font-bold leading-tight text-navy">Find the right tech stack for your startup</h1>

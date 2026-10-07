@@ -1,10 +1,8 @@
+import { pageMeta } from "@/lib/seo";
 import type { Metadata } from "next";
 import { Building2 } from "lucide-react";
 
-export const metadata: Metadata = {
-  title: "For agencies",
-  description: "White-label StackPilot for your agency: branded blueprints, qualified lead capture, and client-ready PDFs.",
-};
+export const metadata: Metadata = pageMeta({ title: "White-label tech stack tool for agencies", description: "White-label StackPilot for your agency: branded blueprints, qualified lead capture, and client-ready PDFs.", path: "/for-agencies" });
 
 const PLANS = [
   { name: "Starter", price: "€299", body: "For solo consultants and small studios." },

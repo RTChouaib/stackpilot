@@ -1,1 +1,33 @@
-import type {MetadataRoute} from "next";import {desc,eq} from "drizzle-orm";import {db} from "@/lib/db";import {blueprints} from "@/lib/db/schema";import {articles,qnas} from "./content";import {comparisons} from "./comparisons/data";import {stackPages} from "./stacks/data";import {costPages} from "./cost/data";const BASE_URL=process.env.NEXT_PUBLIC_APP_URL??"https://stackpilot.by-rtc.com";export const dynamic="force-dynamic";export default async function sitemap():Promise<MetadataRoute.Sitemap>{const base=["/","/wizard","/tools","/guides","/qna","/comparisons","/stacks","/cost","/ai","/startups","/development","/about","/contact","/privacy","/terms","/cookie-policy","/disclaimer","/advertising"].map(url=>({url:`${BASE_URL}${url}`,changeFrequency:"weekly" as const,priority:url==="/" ? 1 : .7}));const tools=["ai-api-cost-calculator","startup-cost-calculator","saas-mrr-calculator","saas-churn-calculator","saas-ltv-calculator","saas-cac-calculator","stripe-fee-calculator","token-cost-calculator","bandwidth-calculator","tech-stack-generator"].map(s=>({url:`${BASE_URL}/tools/${s}`,changeFrequency:"monthly" as const,priority:.8}));const comparisonSlugs=new Set(comparisons.map(c=>c.slug));const guides=articles.filter(a=>!comparisonSlugs.has(a.slug)).map(a=>({url:`${BASE_URL}/guides/${a.slug}`,changeFrequency:"monthly" as const,priority:.7}));const comparisonUrls=comparisons.map(c=>({url:`${BASE_URL}/comparisons/${c.slug}`,changeFrequency:"monthly" as const,priority:.75}));const stackUrls=stackPages.map(p=>({url:`${BASE_URL}/stacks/${p.slug}`,changeFrequency:"monthly" as const,priority:.75}));const costUrls=costPages.map(p=>({url:`${BASE_URL}/cost/${p.slug}`,changeFrequency:"monthly" as const,priority:.7}));const questions=qnas.map(q=>({url:`${BASE_URL}/qna/${q[0]}`,changeFrequency:"monthly" as const,priority:.6}));let bps:MetadataRoute.Sitemap=[];try{const rows=await db.select({shareToken:blueprints.shareToken,createdAt:blueprints.createdAt}).from(blueprints).where(eq(blueprints.isPublic,true)).orderBy(desc(blueprints.createdAt)).limit(5000);bps=rows.map(x=>({url:`${BASE_URL}/blueprint/${x.shareToken}`,lastModified:x.createdAt,changeFrequency:"monthly" as const,priority:.4}));}catch{}return [...base,...tools,...guides,...comparisonUrls,...stackUrls,...costUrls,...questions,...bps]};
+import type { MetadataRoute } from "next";
+import { articles, qnas } from "./content";
+import { comparisons } from "./comparisons/data";
+import { stackPages } from "./stacks/data";
+import { costPages } from "./cost/data";
+import { absoluteUrl } from "@/lib/seo";
+
+// Fully static (no DB): only public, indexable, canonical URLs. User-generated
+// /blueprint/* pages, /w/*, /admin, /agency and /api are intentionally excluded.
+const TOOLS = [
+  "ai-api-cost-calculator", "startup-cost-calculator", "saas-mrr-calculator", "saas-churn-calculator",
+  "saas-ltv-calculator", "saas-cac-calculator", "stripe-fee-calculator", "token-cost-calculator",
+  "bandwidth-calculator", "tech-stack-generator",
+];
+const STATIC_PAGES = [
+  "/", "/wizard", "/tools", "/guides", "/qna", "/comparisons", "/stacks", "/cost", "/ai", "/startups",
+  "/development", "/for-agencies", "/about", "/contact", "/privacy", "/terms", "/cookie-policy", "/disclaimer", "/advertising",
+];
+
+export default function sitemap(): MetadataRoute.Sitemap {
+  // /guides/<slug> for a comparison 308-redirects to /comparisons/<slug>, so list only the canonical one.
+  const comparisonSlugs = new Set(comparisons.map((c) => c.slug));
+  const entry = (path: string, changeFrequency: "weekly" | "monthly", priority: number) => ({ url: absoluteUrl(path), changeFrequency, priority });
+  return [
+    ...STATIC_PAGES.map((p) => entry(p, "weekly", p === "/" ? 1 : 0.7)),
+    ...TOOLS.map((s) => entry(`/tools/${s}`, "monthly", 0.8)),
+    ...articles.filter((a) => !comparisonSlugs.has(a.slug)).map((a) => entry(`/guides/${a.slug}`, "monthly", 0.7)),
+    ...comparisons.map((c) => entry(`/comparisons/${c.slug}`, "monthly", 0.75)),
+    ...stackPages.map((p) => entry(`/stacks/${p.slug}`, "monthly", 0.75)),
+    ...costPages.map((p) => entry(`/cost/${p.slug}`, "monthly", 0.7)),
+    ...qnas.map((q) => entry(`/qna/${q[0]}`, "monthly", 0.6)),
+  ];
+}

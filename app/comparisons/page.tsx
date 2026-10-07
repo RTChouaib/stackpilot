@@ -1,7 +1,8 @@
+import {pageMeta} from "@/lib/seo";
 import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { comparisons } from "./data";
 
-export const metadata={title:"Technology Comparisons",description:"Practical startup comparisons of frameworks, databases, hosting platforms, mobile stacks and AI infrastructure."};
+export const metadata=pageMeta({title:"Technology Comparisons",description:"Practical startup comparisons of frameworks, databases, hosting platforms, mobile stacks and AI infrastructure.",path:"/comparisons"});
 export default function Comparisons(){return <><SiteHeader/><main className="max-w-6xl mx-auto px-5 sm:px-8 py-14"><h1 className="font-head text-4xl font-bold text-navy">Technology comparisons</h1><p className="mt-3 max-w-2xl text-navy-soft">Compare technologies by actual startup requirements, trade-offs, cost, developer experience and use case.</p><div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mt-10">{comparisons.map(item=><Link key={item.slug} href={`/comparisons/${item.slug}`} className="bg-white border border-border rounded-2xl p-6 hover:border-blue"><h2 className="font-head text-xl font-semibold text-navy">{item.title}</h2><p className="mt-2 text-sm leading-6 text-navy-soft">{item.description}</p><span className="block mt-4 text-sm font-semibold text-blue">Read comparison →</span></Link>)}</div><div className="mt-12 rounded-2xl bg-navy p-7 text-white"><h2 className="font-head text-2xl font-bold">Need a recommendation, not another comparison?</h2><p className="mt-2 text-white/70">Tell StackPilot what you are building and get a stack based on your budget, users, timeline and priorities.</p><Link href="/wizard" className="inline-flex mt-5 bg-white text-navy rounded-xl px-5 py-3 font-semibold">Build my stack →</Link></div></main><SiteFooter/></>}

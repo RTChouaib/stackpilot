@@ -20,6 +20,11 @@ const nextConfig = {
           { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
         ],
       },
+      // Belt-and-braces for private/utility areas (the pages also carry a noindex meta tag).
+      ...["/api/:path*", "/admin/:path*", "/agency/:path*", "/w/:path*", "/blueprint/:path*", "/privacy/delete-my-data/:path*"].map((source) => ({
+        source,
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      })),
     ];
   },
 };

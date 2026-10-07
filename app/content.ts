@@ -64,7 +64,7 @@ export const articles:Article[]=[
 {heading:"Launch and growth",body:["Install analytics, Search Console and an XML sitemap. Create clear privacy, terms, cookie and advertising information. Test mobile performance and all critical user flows before launch."]}]}
 ];
 export const articleMap=Object.fromEntries(articles.map(a=>[a.slug,a])) as Record<string,Article>;
-export const qnas=[
+export const qnas:[string,string,string,string][]=[
 ["what-is-a-tech-stack","What Is a Tech Stack?","A tech stack is the collection of technologies used to build and operate a software product, including its frontend, backend, database, hosting and supporting services.","how-to-choose-a-tech-stack"],
 ["how-do-i-choose-a-tech-stack","How Do I Choose a Tech Stack?","Start with product requirements, team skills, time to market, budget and expected scale. Pick technologies you can maintain and measure rather than optimizing for theoretical scale.","how-to-choose-a-tech-stack"],
 ["what-is-the-best-tech-stack-for-a-saas","What Is the Best Tech Stack for a SaaS?","There is no universal best stack. A common starting point is a React/Next.js frontend, PostgreSQL, managed authentication, a payment provider and managed hosting.","best-tech-stack-for-saas"],

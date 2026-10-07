@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
+import { SITE_URL } from "@/lib/seo";
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://stackpilot.by-rtc.com";
+const BASE_URL = SITE_URL;
 const ADSENSE_ID = process.env.NEXT_PUBLIC_ADSENSE_PUBLISHER_ID;
 
 export const metadata: Metadata = {
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
  description: "Free startup technology guides, calculators, comparisons and a personalized tech stack generator.",
  openGraph: { title: "StackPilot — Startup Tech Stack, Tools & Calculators", description: "Practical technology guides, startup calculators and a personalized stack generator.", url: BASE_URL, siteName:"StackPilot", images:[{url:"/api/og",width:1200,height:630}], type:"website" },
  twitter:{card:"summary_large_image"},
- robots:{index:true,follow:true},
+ robots:{index:true,follow:true,googleBot:{index:true,follow:true,"max-image-preview":"large","max-snippet":-1,"max-video-preview":-1}},
 };
 
 export default function RootLayout({children}:{children:React.ReactNode}) {
