@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Script from "next/script";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://stackpilot.by-rtc.com";
@@ -22,5 +23,6 @@ export default function RootLayout({children}:{children:React.ReactNode}) {
   <script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(orgJsonLd)}} />
   <script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(siteJsonLd)}} />
   {children}
+  <Analytics />
  </body></html>;
 }
